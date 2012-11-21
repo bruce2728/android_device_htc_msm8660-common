@@ -20,7 +20,17 @@ ZRAM=0
 # TUN
 TUN=0
 
+# USB fast charge
+# 0 - disabled (default)
+# 1 - substitute AC to USB charging always
+# 2 - substitute AC to USB charging only if no USB peripheral is detected
+FASTCHG=0
+
 ### DO NOT CHANGE ANYTHING BELLOW THIS LINE! ###
+L="log -p i -t $0"
+
+$L "setting fast charge to ${FASTCHG}"
+echo ${FASTCHG} > /sys/kernel/fast_charge/force_fast_charge
 
 $L "setting sweep2wake to ${SWEEP2WAKE}"
 echo ${SWEEP2WAKE} > /sys/android_touch/sweep2wake
@@ -71,8 +81,9 @@ esac
 echo ${CUR_GOV} > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 
 if [ "${ZRAM}" = "1" ]; then
-	if [ -e /sys/block/zram0/disksize ] ; then
-		$L "Setting ZRAM disksize."
+	if [ -e /system/lib/modules/zram.ko ]; then
+		modprobe zram num_devices=1;
+		echo 1 > /sys/block/zram0/reset;
 		echo $((100*1024*1024)) > /sys/block/zram0/disksize
 
 		mkswap /dev/block/zram0
